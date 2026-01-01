@@ -16,7 +16,7 @@ class Label(Widget):
 				}
 
 	def __init__(self, parent, name=None, text="", font=None, pt_size=None, color=None,
-				outline_color=None, outline_size=None, outline_smoothing=None, pos=[0, 0], sub_theme='', options=BGUI_DEFAULT, center_text=None):
+				outline_color=None, outline_size=None, outline_smoothing=None, pos=[0, 0], sub_theme='', options=BGUI_DEFAULT, center_text=None, center_text_vertically=False):
 		"""
 		:param parent: the widget's parent
 		:param name: the name of the widget
@@ -28,6 +28,7 @@ class Label(Widget):
 		:param sub_theme: name of a sub_theme defined in the theme file (similar to CSS classes)
 		:param options: various other options
 		:param center_text: whether to center the text at the given position (defaults to theme setting)
+		:param center_text_vertically: whether to also center the text vertically (in addition to horizontally)
 
 		"""
 		is_normalized = all(0 <= p <= 1 for p in pos)
@@ -73,6 +74,8 @@ class Label(Widget):
 			self.center_text = center_text
 		else:
 			self.center_text = self.theme['CenterText']
+		
+		self.center_text_vertically = center_text_vertically
 
 		self.text = text
 
@@ -87,7 +90,7 @@ class Label(Widget):
 		self.system.textlib.size(self.fontid, self.pt_size, 72)
 		
 		width = self.system.textlib.dimensions(self.fontid, value)[0]
-		height = self.system.textlib.dimensions(self.fontid, 'Mj')[0]
+		height = self.system.textlib.dimensions(self.fontid, 'Mj')[1]  # [1] is height, not [0]
 		
 		self._original_size = [width, height]
 		
@@ -118,6 +121,15 @@ class Label(Widget):
 
 	def _draw_text(self, x, y):
 		lines = [i for i in self._text.split('\n')]
+		
+		# Calculate vertical offset if center_text_vertically is enabled
+		if self.center_text_vertically and hasattr(self, '_original_size'):
+			if not (self.options & BGUI_NO_NORMALIZE):
+				half_height_norm = (self._original_size[1] / 2) / self.parent.size[1]
+				y = y - (half_height_norm * self.parent.size[1])
+			else:
+				y = y - (self._original_size[1] / 2)
+		
 		for i, txt in enumerate(lines):
 			
 			if self.center_text:

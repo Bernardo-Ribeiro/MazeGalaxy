@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    Exemplo de XML usando flags nomeadas no BGUI
+    Este arquivo demonstra o novo recurso de usar nomes de flags
+    ao invés de valores numéricos
+-->
+<UI>
+    <!-- Menu Principal -->
+    <Frame name="MainMenu" pos="0.0,0.0" size="1.0,1.0">
+        
+        <!-- Título do Jogo - Centralizado horizontalmente -->
+        <Label name="GameTitle" 
+               text="MAZE GALAXY" 
+               pos="0.5,0.20" 
+               font="Montserrat-SemiBold.ttf" 
+               pt_size="72" 
+               color="0.2,0.8,1.0,1"/>
+        
+        <!-- Subtítulo - Centralizado horizontalmente -->
+        <Label name="GameSubtitle" 
+               text="Navigate the Cosmic Labyrinth" 
+               pos="0.5,0.28" 
+               font="Montserrat-Light.ttf" 
+               pt_size="24"
+               color="0.7,0.7,0.7,1"/>
+        
+        <!-- Botão Start Game - Texto já centralizado por padrão -->
+        <Button name="StartButton" 
+                text="Start Game" 
+                pos="0.35,0.65" 
+                size="0.3,0.08" 
+                font="Montserrat-Medium.ttf" 
+                pt_size="32"/>
+        
+        <!-- Botão Options -->
+        <Button name="OptionsButton" 
+                text="Options" 
+                pos="0.35,0.55" 
+                size="0.3,0.08" 
+                font="Montserrat-Medium.ttf" 
+                pt_size="32"/>
+        
+        <!-- Botão Quit -->
+        <Button name="QuitButton" 
+                text="Quit" 
+                pos="0.35,0.45" 
+                size="0.3,0.08" 
+                font="Montserrat-Medium.ttf" 
+                pt_size="32"/>
+        
+        <!-- Versão - Canto inferior direito -->
+        <Label name="VersionLabel" 
+               text="v1.0.0 - Named Flags Edition" 
+               pos="0.95,0.95" 
+               font="Montserrat-Light.ttf" 
+               pt_size="14" 
+               color="0.5,0.5,0.5,1"/>
+    </Frame>
+</UI>

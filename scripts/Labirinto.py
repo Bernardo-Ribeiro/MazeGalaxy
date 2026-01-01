@@ -74,6 +74,24 @@ class MazeBuilder(types.KX_PythonComponent):
         
     def get_level(self):
         return self.level
+    
+    def regenerate_current_level(self):
+        """Regenera o labirinto atual mantendo o mesmo nível"""
+        # Não incrementar o nível, apenas regenerar
+        if self.generated:
+            self.reset_maze()
+            # NÃO mudar self.level aqui!
+            print(f"[MazeBuilder] Regenerando Nível {self.level} - Tamanho: {self.rows} x {self.cols}")
+        
+        # Resetar visitados e paredes
+        for cell in self.grid:
+            cell['visited'] = False
+            cell['walls'] = {'top': True, 'right': True, 'bottom': True, 'left': True}
+
+        self.current = self.grid[0]
+        self.generate_maze()
+        self.build_mesh()
+        self.generated = True
 
     def generate_maze(self):
         self.stack = [self.current]

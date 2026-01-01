@@ -14,6 +14,30 @@ from .text_input import TextInput
 from .video import Video
 from .theme import Theme
 
+# Import BGUI constants for options parsing
+from .widget import (
+    BGUI_DEFAULT,
+    BGUI_CENTERX,
+    BGUI_CENTERY,
+    BGUI_NO_NORMALIZE,
+    BGUI_NO_THEME,
+    BGUI_NO_FOCUS,
+    BGUI_CACHE,
+    BGUI_CENTERED
+)
+
+# Mapping of flag names to their numeric values
+BGUI_FLAG_MAP = {
+    'BGUI_DEFAULT': BGUI_DEFAULT,
+    'BGUI_CENTERX': BGUI_CENTERX,
+    'BGUI_CENTERY': BGUI_CENTERY,
+    'BGUI_NO_NORMALIZE': BGUI_NO_NORMALIZE,
+    'BGUI_NO_THEME': BGUI_NO_THEME,
+    'BGUI_NO_FOCUS': BGUI_NO_FOCUS,
+    'BGUI_CACHE': BGUI_CACHE,
+    'BGUI_CENTERED': BGUI_CENTERED,
+}
+
 # Mapping XML tag names to BGUI widget classes
 WIDGET_MAP = {
     'Label': Label,
@@ -71,20 +95,86 @@ def create_widget_from_elem(elem, parent):
     if not widget_class:
         print(f"Unknown widget type: {widget_type}")
         return None
-    # Convert XML attributes to widget constructor arguments
-    kwargs = {k: try_parse_widget_arg(k, v) for k, v in elem.attrib.items()}
-    # Ensure 'parent' is the first argument
-    widget = widget_class(parent, **kwargs)
+    
+    # Parse all attributes
+    parsed_attrs = {k: try_parse_widget_arg(k, v) for k, v in elem.attrib.items()}
+    
+    # Widget-specific constructor parameter rules
+    # Label: no 'size', accepts 'color' in constructor
+    # Frame: accepts 'size', no 'color' (use 'colors' property after creation)
+    # Button: accepts 'size' and 'text'
+    
+    if widget_type == 'Label':
+        # Label doesn't accept 'size' in constructor
+        constructor_kwargs = {k: v for k, v in parsed_attrs.items() if k != 'size'}
+        post_props = {}
+        # For Label, 'color' goes in constructor, not post-creation
+    elif widget_type == 'Frame':
+        # Frame accepts most params but 'color' should be 'colors' property
+        post_props = {}
+        if 'color' in parsed_attrs:
+            # Convert single color to 4-corner colors
+            color = parsed_attrs.pop('color')
+            post_props['colors'] = [color, color, color, color]
+        constructor_kwargs = parsed_attrs
+    else:
+        # For other widgets, use default behavior
+        post_creation_props = {'colors', 'border_color', 'text_color', 
+                               'fill_color', 'fill_colors', 'highlight_color', 'selection_color',
+                               'base_color', 'hover_color', 'click_color'}
+        constructor_kwargs = {k: v for k, v in parsed_attrs.items() if k not in post_creation_props}
+        post_props = {k: v for k, v in parsed_attrs.items() if k in post_creation_props}
+    
+    # Create the widget with constructor arguments only
+    widget = widget_class(parent, **constructor_kwargs)
+    
+    # Set post-creation properties
+    for k, v in post_props.items():
+        if hasattr(widget, k):
+            setattr(widget, k, v)
+        else:
+            print(f"BGUI WARNING: Widget {widget_type} does not have property '{k}'")
+    
     # Recursively create children, if any
     for child in elem:
         create_widget_from_elem(child, widget)
+    
     return widget
 
 def try_parse_widget_arg(key, value):
+    """
+    Parse widget arguments from XML attributes.
+    
+    Special handling for 'options' attribute:
+    - Supports named flags (e.g., "BGUI_CENTERX|BGUI_NO_THEME")
+    - Supports numeric values (e.g., "9" for BGUI_CENTERX | BGUI_NO_THEME)
+    - Multiple flags can be combined with | (pipe) character
+    """
+    # Special handling for 'options' attribute - support named flags
+    if key == "options":
+        # Check if value contains named flags (contains letters)
+        if any(c.isalpha() for c in value):
+            # Parse named flags
+            flags = [flag.strip() for flag in value.split("|")]
+            result = 0
+            for flag in flags:
+                if flag in BGUI_FLAG_MAP:
+                    result |= BGUI_FLAG_MAP[flag]
+                else:
+                    print(f"BGUI WARNING: Unknown flag '{flag}'. Available flags: {', '.join(BGUI_FLAG_MAP.keys())}")
+            return result
+        # Otherwise try to parse as int (numeric value)
+        try:
+            return int(value)
+        except ValueError:
+            print(f"BGUI WARNING: Invalid options value '{value}'. Using BGUI_DEFAULT (0).")
+            return BGUI_DEFAULT
+    
     # Convert comma-separated strings to lists of floats for certain attributes
     if key in ("pos", "size", "base_color", "color", "outline_color", "fill_color", "fill_colors", 
                "border_color", "text_color", "highlight_color", "selection_color"):
         return [float(x) for x in value.split(",")]
+    
     # Try to convert to int or float, otherwise keep as string
     for fn in (int, float):
         try:

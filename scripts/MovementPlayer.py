@@ -9,8 +9,24 @@ class Character(Range.types.KX_PythonComponent):
     def start(self, args):
         self._character = Range.constraints.getCharacter(self.object)
         self.base_speed = 0.2
+        self.ui_component = None
+        
+        # Encontrar o componente de UI
+        scene = Range.logic.getCurrentScene()
+        for obj in scene.objects:
+            for component in obj.components:
+                if component.__class__.__name__ == 'Interface':
+                    self.ui_component = component
+                    break
+            if self.ui_component:
+                break
 
     def update(self):
+        # Se o jogo estiver pausado, não processar movimento
+        if self.ui_component and self.ui_component.is_game_paused():
+            self._character.walkDirection = Vector((0, 0, 0))
+            return
+        
         keyboard = Range.logic.keyboard.inputs
         
         # Movimento básico
